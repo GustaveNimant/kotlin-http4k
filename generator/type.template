@@ -1,0 +1,142 @@
+package io.ipfs.kotlin
+
+/**
+ * What is it : The different Types of Immutable files
+ * Definition : An Immutable is a file adressed by its content i.e. its hash or CID on Ipfs.
+ * Definition : An {{ELEMENT}}Type is parametrized by the Type of its Hash (MultiHashType)
+ * Definition : {{ELEMENT}}Block
+ * Definition : {{ELEMENT}}Code
+ * Definition : {{ELEMENT}}Friends
+ * Definition : {{ELEMENT}}Identity
+ * Definition : {{ELEMENT}}Label
+ * Definition : {{ELEMENT}}SmartContract
+ * Definition : {{ELEMENT}}Symbol
+ * Definition : {{ELEMENT}}Tag
+ * Definition : {{ELEMENT}}Text
+ * Abbreviation : {{ABBREVIATION}}Typ 
+ * Author : Emile Achadde 23 février 2020 at 09:33:04+01:00
+ * Revision : companion by Emile Achadde 28 février 2020 at 15:45:40+01:00
+ * Revision : hashOf() by Emile Achadde 01 mars 2020 at 13:03:06+01:00
+ */
+
+sealed class {{ELEMENT}}Type () {
+    data class {{ELEMENT}}TypeSUB01 (val multiHash: MultiHashType) : {{ELEMENT}}Type()
+    data class {{ELEMENT}}TypeProgram (val multiHash: MultiHashType) : {{ELEMENT}}Type()
+    data class {{ELEMENT}}TypeFriends (val multiHash: MultiHashType) : {{ELEMENT}}Type()
+    data class {{ELEMENT}}TypeIdentity (val multiHash: MultiHashType) : {{ELEMENT}}Type()
+    data class {{ELEMENT}}TypeLabel (val multiHash: MultiHashType) : {{ELEMENT}}Type()
+    data class {{ELEMENT}}TypeSmartContract (val multiHash: MultiHashType) : {{ELEMENT}}Type()
+    data class {{ELEMENT}}TypeSymbol (val multiHash: MultiHashType) : {{ELEMENT}}Type()
+    data class {{ELEMENT}}TypeTag (val multiHash: MultiHashType) : {{ELEMENT}}Type()
+    data class {{ELEMENT}}TypeText (val multiHash: MultiHashType) : {{ELEMENT}}Type()
+
+    fun hashOf (): String {
+	val (here, caller) = moduleHereAndCaller()
+	entering(here, caller)
+
+	val mulHas = multiHashOf()
+	val result = mulHas.hashOf()
+
+	if(isTrace(here)) println ("$here: output result '$result'")
+	
+	exiting(here)
+	return result
+    }
+
+    fun multiHashOf(): MultiHashType {
+	val (here, caller) = moduleHereAndCaller()
+	entering(here, caller)
+
+	val result =
+	    when (this) {
+		is {{ELEMENT}}TypeSUB01 -> this.multiHash
+		is {{ELEMENT}}TypeProgram -> this.multiHash
+		is {{ELEMENT}}TypeFriends -> this.multiHash
+		is {{ELEMENT}}TypeIdentity -> this.multiHash
+		is {{ELEMENT}}TypeLabel -> this.multiHash 
+		is {{ELEMENT}}TypeSmartContract -> this.multiHash
+		is {{ELEMENT}}TypeSymbol -> this.multiHash
+		is {{ELEMENT}}TypeTag -> this.multiHash 
+		is {{ELEMENT}}TypeText -> this.multiHash 
+	    }
+	if(isTrace(here)) println ("$here: output result '$result'")
+	
+	exiting(here)
+	return result
+    }
+
+    fun nameOf (): String {
+	val (here, caller) = moduleHereAndCaller()
+	entering(here, caller)
+	val mulHas = multiHashOf() 
+	val result =
+	    when (this) {
+		is {{ELEMENT}}TypeSUB01 -> "{{ELEMENT}}TypeSUB01"
+		is {{ELEMENT}}TypeProgram -> "{{ELEMENT}}TypeProgram"
+		is {{ELEMENT}}TypeFriends -> "{{ELEMENT}}TypeFriends"
+		is {{ELEMENT}}TypeIdentity -> "{{ELEMENT}}TypeIdentity"
+		is {{ELEMENT}}TypeLabel -> "{{ELEMENT}}TypeLabel"
+		is {{ELEMENT}}TypeSmartContract -> "{{ELEMENT}}TypeSmartContract"
+		is {{ELEMENT}}TypeSymbol -> "{{ELEMENT}}TypeSymbol"
+		is {{ELEMENT}}TypeTag -> "{{ELEMENT}}TypeTag"
+		is {{ELEMENT}}TypeText -> "{{ELEMENT}}TypeText"
+	    }
+	if(isTrace(here)) println ("$here: output result '$result'")
+	
+	exiting(here)
+	return result
+    }
+
+    fun stringOf (): String {
+	val (here, caller) = moduleHereAndCaller()
+	entering(here, caller)
+	val mulHas = multiHashOf()
+	val hash = mulHas.hashOf()
+	val result = 
+	    when (this) {
+		is {{ELEMENT}}TypeSUB01 -> "{{ELEMENT}}TypeSUB01("+hash+")"
+		is {{ELEMENT}}TypeProgram -> "{{ELEMENT}}TypeProgram("+hash+")"
+		is {{ELEMENT}}TypeFriends -> "{{ELEMENT}}TypeFriends("+hash+")"
+		is {{ELEMENT}}TypeIdentity -> "{{ELEMENT}}TypeIdentity("+hash+")"
+		is {{ELEMENT}}TypeLabel -> "{{ELEMENT}}TypeLabel("+hash+")"
+		is {{ELEMENT}}TypeSmartContract -> "{{ELEMENT}}TypeSmartContract("+hash+")"
+		is {{ELEMENT}}TypeSymbol -> "{{ELEMENT}}TypeSymbol("+hash+")"
+		is {{ELEMENT}}TypeTag -> "{{ELEMENT}}TypeTag("+hash+")"
+		is {{ELEMENT}}TypeText -> "{{ELEMENT}}TypeText("+hash+")"
+	    }
+
+	if(isTrace(here)) println ("$here: output result '$result'")
+	
+	exiting(here)
+	return result
+    }
+
+    companion object {
+	fun make(typ: String, mulHas: MultiHashType): {{ELEMENT}}Type {
+	    val (here, caller) = moduleHereAndCaller()
+	    entering(here, caller)
+
+	    if(isTrace(here)) println ("$here: input typ '$typ'")
+	    if(isTrace(here)) println ("$here: input mulHas '$mulHas'")
+
+	    val typLow = typ.toLowerCase()
+	    val result =
+		when (typLow) {
+		    "block" -> {{ELEMENT}}TypeSUB01(mulHas)
+		    "code" -> {{ELEMENT}}TypeProgram(mulHas)
+		    "friends" -> {{ELEMENT}}TypeFriends(mulHas)
+		    "identity" -> {{ELEMENT}}TypeIdentity(mulHas)
+		    "mabel" -> {{ELEMENT}}TypeLabel(mulHas)
+		    "smartContract" -> {{ELEMENT}}TypeSmartContract(mulHas)
+		    "symbol" -> {{ELEMENT}}TypeSymbol(mulHas)
+		    "tag" -> {{ELEMENT}}TypeTag(mulHas)
+		    "text" -> {{ELEMENT}}TypeText(mulHas)
+		    else -> { fatalErrorPrint("Type is one of 'SUB01' 'Code' 'Friends' 'Identity' 'Label' 'SmartContract' 'Symbol' 'Tag' 'Text'", "'$typ'", "Check", here)}
+	    } // when
+	if(isTrace(here)) println ("$here: output result '$result'")
+	
+	exiting(here)
+	return result
+	}
+    } // companion 
+}

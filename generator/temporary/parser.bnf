@@ -1,0 +1,4 @@
+<block> ::=  <meta> <text>
+
+<meta>           ::= <meta_mandatory> <meta_optional>
+<meta_mandatory> ::= <previous_hash>

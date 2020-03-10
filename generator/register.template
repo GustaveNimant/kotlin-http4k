@@ -1,0 +1,78 @@
+package io.ipfs.kotlin
+
+import io.ipfs.kotlin.defaults.*
+
+/**
+ * Storage   : {{ELEMENT}}Value (content of an Immutable file) by its ImmutableType
+ * Needs     : {{ELEMENT}}Type (MultiHashType (strHas)) where strHas is the hash string
+ * Needed by : 
+ * Author : Emile Achadde 01 mars 2020 at 10:30:45+01:00
+ */
+
+class {{ELEMENT}}Register {
+    
+    var register : MutableMap<{{ELEMENT}}Type, {{ELEMENT}}Value> = mutableMapOf<{{ELEMENT}}Type, {{ELEMENT}}Value>()
+
+    fun isEmpty (): Boolean {
+	val (here, caller) = moduleHereAndCaller()
+	entering(here, caller)
+	
+	val result = register.isEmpty()
+	
+	if(isTrace(here)) println ("$here: output result $result")
+	
+	return result
+    }
+
+    fun store ({{ABBREVIATION}}Typ: {{ELEMENT}}Type, {{ABBREVIATION}}Val: {{ELEMENT}}Value) {
+	val (here, caller) = moduleHereAndCaller()
+	entering(here, caller)
+	
+	if(isTrace(here)) println ("$here: input {{ABBREVIATION}}Typ '${{ABBREVIATION}}Typ'")
+	if(isTrace(here)) println ("$here: input {{ABBREVIATION}}Val '${{ABBREVIATION}}Val'")
+	
+	if (isStored({{ABBREVIATION}}Typ)) {
+	    val con = retrieve({{ABBREVIATION}}Typ)
+	    if (con != {{ABBREVIATION}}Val) {
+		fatalErrorPrint("{{ELEMENT}}Value already stored for {{ABBREVIATION}}Typ '${{ABBREVIATION}}Typ' were equal to new one", {{ABBREVIATION}}Val.toString(), "Check", here)
+	    }
+	}
+	else {
+	    register.put({{ABBREVIATION}}Typ, {{ABBREVIATION}}Val)
+	}
+	if(isTrace(here)) println ("$here: {{ABBREVIATION}}Val couple has been stored")
+    }
+    
+    fun isStored ({{ABBREVIATION}}Typ: {{ELEMENT}}Type): Boolean {
+	val (here, caller) = moduleHereAndCaller()
+	entering(here, caller)
+	
+	if(isTrace(here)) println ("$here: input {{ABBREVIATION}}Typ '${{ABBREVIATION}}Typ'")
+	
+	val {{ABBREVIATION}}Val = register.get({{ABBREVIATION}}Typ)
+	val result = when ({{ABBREVIATION}}Val) {
+	    is {{ELEMENT}}Value -> register.contains({{ABBREVIATION}}Typ) 
+	    else -> false
+	}
+	
+	if(isTrace(here)) println ("$here: output result '$result'")
+	
+	exiting(here)
+	return result
+    }
+    
+    fun retrieve ({{ABBREVIATION}}Typ: {{ELEMENT}}Type): {{ELEMENT}}Value {
+	val (here, caller) = moduleHereAndCaller()
+	entering(here, caller)
+	
+	val {{ABBREVIATION}}Val = register.get({{ABBREVIATION}}Typ)
+	val result = when ({{ABBREVIATION}}Val) {
+	    is {{ELEMENT}}Value -> {{ABBREVIATION}}Val 
+	    else -> {fatalErrorPrint ("", "", "", here)}
+	}
+	if(isTrace(here)) println ("$here: output result '$result'")
+	
+	exiting(here)
+	return result
+    }
+}
