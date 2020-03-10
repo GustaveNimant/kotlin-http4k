@@ -1,0 +1,450 @@
+package io.ipfs.kotlin
+
+import kotlin.system.exitProcess
+import io.ipfs.kotlin.defaults.*
+import io.ipfs.kotlin.url.*
+
+import java.io.File
+import java.util.Stack
+
+import org.http4k.client.apacheclient
+import org.http4k.core.method
+//import org.http4k.core.request
+//import org.http4k.core.response
+//import org.http4k.core.status.companion.ok
+//import org.http4k.server.jetty
+//import org.http4k.server.asserver
+
+import org.http4k.client.okhttp
+import org.http4k.core.filter
+import org.http4k.core.httphandler
+import org.http4k.core.method.get
+import org.http4k.core.request
+import org.http4k.core.response
+import org.http4k.core.status.companion.ok
+import org.http4k.core.then
+import org.http4k.filter.cachingfilters
+import org.http4k.routing.bind
+import org.http4k.routing.path
+import org.http4k.routing.routes
+import org.http4k.server.jetty
+import org.http4k.server.asserver
+/**
+ * what is it : the main menu to manage http4k commands
+ * revision : emile achadde 08 mars 2020 at 12:19:07+01:00
+ */
+
+fun commandAndParametersOfStringList(str_l: list<string>): pair<string, list<string>> {
+  val (here, caller) = modulehereandcaller()
+  entering(here, caller)
+
+  if(istrace(here)) println("$here: input str_l $str_l")
+
+  val str = str_l.first()
+  if(isverbose(here)) println("$here: for str $str")
+
+  val result = 
+      if (str.startswith('-')) {
+	  val command = str.substring(1).tolowercase()
+	  if(isverbose(here)) println("$here: command set as '$command'")
+	  val arg_l = str_l.drop(1)
+	  pair (command, arg_l)
+      }
+      else {
+	  fatalerrorprint("command starts with '-'",str, "check", here) 
+      }
+
+  if(istrace(here)) println("$here: output result $result")
+
+  exiting(here)
+  return result
+}
+
+fun commandSetOfParameterMap (parmap: map<string, list<string>>): set<string> {
+    val (here, caller) = modulehereandcaller()
+    entering(here, caller)
+
+    if(istrace(here)) println ("$here: input parmap $parmap")
+    val result = parmap.keys
+
+    if(istrace(here)) println ("$here: output result $result")
+    exiting(here)
+    return result 
+    }
+
+fun endProgram () {
+    val (here, caller) = modulehereandcaller()
+    entering(here, caller)
+
+    println("\nnormal termination")
+    exiting(here)
+}
+
+fun executeProvideOfWordList(wor_l: list<string>) {
+    val (here, caller) = modulehereandcaller()
+    entering(here, caller)
+    
+    // ex.: -provide peerid
+    
+    var done = false
+    if(istrace(here)) println ("$here: input wor_l '$wor_l'")
+    var wor_s = wordstackofwordlist(wor_l)
+    
+    while (!done) {
+	try {
+	    val wor = wor_s.pop()
+	    val wor_3 = wor.substring(0,3)
+	    if(isloop(here)) println("$here: while wor '$wor'")
+	    
+	    when (wor_3) {
+		"hel" -> {
+		    wor_s.clear()
+			val hel_l = helplist()
+			val h_l = hel_l.filter({h -> h.contains("-provide ")})
+			printofstringlist(h_l)
+    		}
+		"has" -> {
+		    when (wor) {
+			"hashtype" -> {
+			    val hasfuntyp = hashfunctiontype()
+			    println ("$here: hashfunctiontype $hasfuntyp")
+			}
+			"hashinput" -> {
+			    val hasinpstr = hashinputstring()
+			    println ("$here: hashinputstring $hasinpstr")
+			}
+			"hashvalue" -> {
+			    val hasfuntyp = hashfunctiontype()
+			    val hasinpstr = hashinputstring()
+			    val hasvalue = hashstringoftypeofinput(hasfuntyp, hasinpstr)
+			    println ("$here: hashfunctiontype '$hasfuntyp'")
+			    println ("$here: hashinputstring '$hasinpstr'")
+			    println ("$here: hash value '$hasvalue'")
+			}
+			else -> {
+			    fatalerrorprint ("$here: command were '-provide hashtype' or '-provide hashinput' '-provide hashvalue","'-provide $wor'", "check input", here)
+			}
+		    }
+		}// when (wor)
+		"pee" -> {
+		    notyetimplemented("peerid")
+		}
+		else -> {
+		    fatalerrorprint ("command were 'add', 'get'","'"+wor+"'", "check input", here)
+		} // else
+	    } // when (wor_3)
+	} // try
+	catch (e: java.util.emptystackexception) {done = true} // catch
+	
+    } // while
+    exiting(here)
+}
+
+fun main(args: array<string>) {
+    val (here, caller) = modulehereandcaller()
+    entering(here, caller)
+
+    val parmap = parameterMapOfArguments(args)
+    parametermap = parmap.tomap() // globalization for trace ...
+    
+    if (parmap.size == 0) {
+	println ("$here: commands are:")
+	val hel_l = helplist()
+	for (hel in hel_l) {
+	    println (hel)
+	}
+	exitprocess(0)
+    }
+
+    if(isverbose(here)) {
+	if (parmap.size > 0) {
+	    println ("$here: commands with their parameter list:")
+	    for ( (k, v) in parmap) {
+		println ("$here: $k => $v")
+	    }
+	}
+    }
+    mainMenu(parmap)
+    
+    println("\nnormal termination")
+    exiting(here)
+}
+
+fun mainMenu (parmap: map<string, list<string>>) {
+    val (here, caller) = modulehereandcaller()
+    entering(here, caller)
+
+    if(istrace(here)) println ("$here: input parmap $parmap")
+    val com_s = commandSetOfParameterMap (parmap)
+    if(istrace(here)) println ("$here: com_s $com_s")
+
+    var step = 0
+    for (com in com_s) { 
+	step = step + 1
+	println("$here: ----- command # $step '$com' -----")
+	val com_3 = com.substring(0,3)
+	
+	val wor_ml = parmap.get(com)
+	val wor_l = wor_ml!!.map({w -> w.tostring()}) 
+	if (isloop(here)) println("$here: wor_l '$wor_l'")
+	
+	when (com_3) {
+	    "deb", "ent", "loo", "tra", "ver", "whe" -> {
+		val str = stringofstringlist(wor_ml)
+		println("$here: '$com' activated for '$str' functions")
+	    }
+	    "end", "exi" -> {endProgram()}
+	    "exa" -> {wrapperexecuteexampleofwordlist(wor_l)}
+	    "gen" -> {wrapperExecuteGenerateOfWordList(wor_l)}
+	    "has" -> {wrapperExecuteHashOfWord(com)}
+	    "hel" -> {helpofparametermap(parmap)}
+	    "hos" -> {wrapperExecuteHostOfWordList(wor_l)}
+            "htt" -> {wrapperexecutehttp4kofwordlist(wor_l)}
+	    "inp" -> {wrapperexecuteinputofwordlist(wor_l)}
+	    "ipf" -> {wrapperexecuteipfsofwordlist(wor_l)}
+	    "kwe" -> {wrapperexecutekeywordofwordlist(wor_l)}
+	    "por" -> {wrapperexecuteportofwordlist(wor_l)}
+	    "pro" -> {wrapperexecuteprovideofwordlist(wor_l)}
+	    else -> {
+		fatalerrorprint ("command were one of end, exi[t], hel[p], ipf[s], run", "'"+com+"'", "re run", here)
+	    } // else
+	} // when
+    } // for
+    
+    exiting(here)
+}
+
+fun parameterMapOfArguments(args: array<string>): map<string, list<string>> {
+  val (here, caller) = modulehereandcaller()
+  entering(here, caller)
+
+  if(istrace(here)) println("$here: input args $args")
+
+  var parmap = mutablemapof<string, list<string>>()
+
+  val arg_l = args.tolist()
+  val str_ll = stringlistlistofdelimiterofstringlist ("-", arg_l)
+  if(isverbose(here)) println("$here: str_ll $str_ll")
+  
+  for (str_l in str_ll) {
+      if(isverbose(here)) println("$here: for str_l $str_l")
+      var (command, par_l) = commandAndParametersOfStringList(str_l)
+      if(parmap.contains(command)) {
+	  val str_ = command.substring(3)
+	  if(isverbose(here)) println("$here: warning: command '$command' is repeated")
+	  if(isverbose(here)) println("$here: warning: to avoid this, modify the end command name '$command' from its 4th character (i.e. modify '$str_')")
+	  command = command + "_"
+	  if(isverbose(here)) println("$here: warning: command has been currently modified to '$command'") 
+      }
+      parmap.put (command, par_l)
+      if(isverbose(here)) println("$here: command '$command' added with par_l $par_l") 
+  } // for arg_l
+
+  val result = parmap.tomap()
+  if(istrace(here)) println("$here: output result $result")
+
+  exiting(here)
+  return result
+}
+
+fun wrapperExecuteGenerateOfWordList (wor_l: list<string>) {
+    val (here, caller) = modulehereandcaller()
+    entering(here, caller)
+
+    if (istrace(here)) println("$here: input wor_l '$wor_l'")
+
+    executegenerateofwordlist(wor_l)
+    
+    exiting(here)
+}
+
+fun wrapperExecuteHashOfWord(wor: string) {
+    val (here, caller) = modulehereandcaller()
+    entering(here, caller)
+
+    val result = 
+	when (wor) {
+	    "hashfunction" -> hashfunctiontype()
+	    "hashinput" -> hashinputstring()
+	    else -> {
+	    }
+	}
+    println ("$here: result $result")
+    exiting(here)
+}
+
+fun wrapperExecuteHostOfWordList (wor_l: list<string>) {
+    val (here, caller) = modulehereandcaller()
+    entering(here, caller)
+
+    if (istrace(here)) println("$here: input wor_l '$wor_l'")
+    try {
+	executehostofwordlist(wor_l)
+    }
+    catch (e: java.net.connectexception){
+	fatalerrorprint ("connection to 127.0.0.1:5001", "connection refused", "launch host :\n\tgo to minichain jsm; . config.sh; ipmsd.sh", here)}
+    
+    exiting(here)
+}
+
+fun wrapperexecuteexampleofwordlist (wor_l: List<String>) {
+    val (here, caller) = moduleHereAndCaller()
+    entering(here, caller)
+
+    if (isTrace(here)) println("$here: input wor_l '$wor_l'")
+    // https://p.codekk.com/detail/Android/http4k/http4k
+    // we can bind HttpHandlers (which are just functions from  Request -> Response) to paths/methods to create a Route,
+    // then combine many Routes together to make another HttpHandler
+    val app: HttpHandler = routes(
+        "/ping" bind GET to { _: Request -> Response(OK).body("pong!") },
+        "/greet/{name}" bind GET to { req: Request ->
+            val path: String = req.path("name")!!
+            Response(OK).body("hello $path")
+        }
+    )
+
+    // call the handler in-memory without spinning up a server
+    val inMemoryResponse: Response = app(Request(GET, "/greet/Bob"))
+    println(inMemoryResponse)
+
+// Produces:
+//    HTTP/1.1 200 OK
+//
+//
+//    hello Bob
+
+    // this is a Filter - it performs pre/post processing on a request or response
+    val timingFilter = Filter { next: HttpHandler ->
+        { request: Request ->
+            val start = System.currentTimeMillis()
+            val response = next(request)
+            val latency = System.currentTimeMillis() - start
+            println("Request to ${request.uri} took ${latency}ms")
+            response
+        }
+    }
+
+    // we can "stack" filters to create reusable units, and then apply them to an HttpHandler
+    val compositeFilter = CachingFilters.Response.NoCache().then(timingFilter)
+    val filteredApp: HttpHandler = compositeFilter.then(app)
+
+    // only 1 LOC to mount an app and start it in a container
+    filteredApp.asServer(Jetty(9000)).start()
+
+    // HTTP clients are also HttpHandlers!
+    val client: HttpHandler = OkHttp()
+
+    val networkResponse: Response = client(Request(GET, "http://localhost:9000/greet/Bob"))
+    println(networkResponse)
+
+// Produces:
+//    Request to /api/greet/Bob took 1ms
+//    HTTP/1.1 200
+//    cache-control: private, must-revalidate
+//    content-length: 9
+//    date: Thu, 08 Jun 2017 13:01:13 GMT
+//    expires: 0
+//    server: Jetty(9.3.16.v20170120)
+//
+//    hello Bob
+
+exiting(here)
+}
+
+fun wrapperExecuteHttp4kOfWordList (wor_l: List<String>) {
+    val (here, caller) = moduleHereAndCaller()
+    entering(here, caller)
+
+    if (isTrace(here)) println("$here: input wor_l '$wor_l'")
+    // https://www.http4k.org/quickstart/
+    val app = { request: Request -> Response(OK).body("Hello, ${request.query("name")}!") }
+    
+    println ("$here: app $app")
+    
+    val jettyServer = app.asServer(Jetty(9000)).start()
+    
+    val request = Request(Method.GET, "http://localhost:9000").query("name", "John Doe")
+    println ("$here: request $request")
+    
+    val client = ApacheClient()
+    println ("$here: client $client")
+    
+    println(client(request))
+    
+    jettyServer.stop()
+    exiting(here)
+}
+
+fun wrapperExecuteInputOfWordList (wor_l: List<String>) {
+    val (here, caller) = moduleHereAndCaller()
+    entering(here, caller)
+
+    val inpFilPat = try {(ParameterMap.getValue("input")).first()}
+                    catch(e:java.util.NoSuchElementException){
+			fatalErrorPrint ("command one argument after command -input", "none", "enter -input <file-path>", here)}
+		    println("$here: input file path '$inpFilPat'")
+    exiting(here)
+}
+
+fun wrapperExecuteIpfsOfWordList (wor_l: List<String>) {
+    val (here, caller) = moduleHereAndCaller()
+    entering(here, caller)
+
+    if (isTrace(here)) println("$here: input wor_l '$wor_l'")
+    try {
+	executeIpfsOfWordList(wor_l)
+    }
+    catch (e: java.net.ConnectException){
+	fatalErrorPrint ("Connection to 127.0.0.1:5001", "Connection refused", "launch Ipfs :\n\tgo to minichain jsm; . config.sh; ipmsd.sh", here)}
+    
+    exiting(here)
+}
+
+fun wrapperExecuteKeywordOfWordList (wor_l: List<String>) {
+    val (here, caller) = moduleHereAndCaller()
+    entering(here, caller)
+
+    if (isTrace(here)) println("$here: input wor_l '$wor_l'")
+
+    val inpFilPat = try { (ParameterMap.getValue("input")).first()}
+                    catch(e:java.util.NoSuchElementException){
+			fatalErrorPrint("an input file path were given","there are none","add '-input <file-name>' to command line",here)
+		    }
+
+     val keyValMap = kwextract(inpFilPat)
+     println ("Extracted (key, value) from input")
+     for ( (k, v) in keyValMap) {
+	 println ("$k => $v")
+     }
+    
+    exiting(here)
+}
+
+fun wrapperExecutePortOfWordList (wor_l: List<String>) {
+    val (here, caller) = moduleHereAndCaller()
+    entering(here, caller)
+
+    if (isTrace(here)) println("$here: input wor_l '$wor_l'")
+    try {
+	executePortOfWordList(wor_l)
+    }
+    catch (e: java.net.ConnectException){
+	fatalErrorPrint ("Connection to 127.0.0.1:5001", "Connection refused", "launch Port :\n\tgo to minichain jsm; . config.sh; ipmsd.sh", here)}
+    
+    exiting(here)
+}
+
+fun wrapperExecuteProvideOfWordList (wor_l: List<String>) {
+    val (here, caller) = moduleHereAndCaller()
+    entering(here, caller)
+
+    if (isTrace(here)) println("$here: input wor_l '$wor_l'")
+    try {
+	executeProvideOfWordList(wor_l)
+    }
+    catch (e: java.net.ConnectException){
+	fatalErrorPrint ("Connection to 127.0.0.1:5001", "Connection refused", "launch Port :\n\tgo to minichain jsm; . config.sh; ipmsd.sh", here)}
+    
+    exiting(here)
+}
+

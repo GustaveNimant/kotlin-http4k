@@ -80,6 +80,68 @@ fun endProgram () {
     exiting(here)
 }
 
+fun executeExampleOfWordList(wor_l: List<String>) {
+    val (here, caller) = moduleHereAndCaller()
+    entering(here, caller)
+        // we can bind HttpHandlers (which are just functions from  Request -> Response) to paths/methods to create a Route,
+    // then combine many Routes together to make another HttpHandler
+    val app: HttpHandler = routes(
+        "/ping" bind GET to { _: Request -> Response(OK).body("pong!") },
+        "/greet/{name}" bind GET to { req: Request ->
+            val name: String? = req.path("name")
+            Response(OK).body("hello ${name ?: "anon!"}")
+        }
+    )
+
+    // call the handler in-memory without spinning up a server
+    val inMemoryResponse: Response = app(Request(GET, "/greet/Bob"))
+    println(inMemoryResponse)
+
+// Produces:
+//    HTTP/1.1 200 OK
+//
+//
+//    hello Bob
+
+    // this is a Filter - it performs pre/post processing on a request or response
+    val timingFilter = Filter {
+        next: HttpHandler ->
+        {
+            request: Request ->
+            val start = System.currentTimeMillis()
+            val response = next(request)
+            val latency = System.currentTimeMillis() - start
+            println("Request to ${request.uri} took ${latency}ms")
+            response
+        }
+    }
+
+    // we can "stack" filters to create reusable units, and then apply them to an HttpHandler
+    val compositeFilter = CachingFilters.Response.NoCache().then(timingFilter)
+    val filteredApp: HttpHandler = compositeFilter.then(app)
+
+    // only 1 LOC to mount an app and start it in a container
+    filteredApp.asServer(Jetty(9000)).start()
+
+    // HTTP clients are also HttpHandlers!
+    val client: HttpHandler = OkHttp()
+
+    val networkResponse: Response = client(Request(GET, "http://localhost:9000/greet/Bob"))
+    println(networkResponse)
+
+// Produces:
+//    Request to /api/greet/Bob took 1ms
+//    HTTP/1.1 200
+//    cache-control: private, must-revalidate
+//    content-length: 9
+//    date: Thu, 08 Jun 2017 13:01:13 GMT
+//    expires: 0
+//    server: Jetty(9.3.16.v20170120)
+//
+//    hello Bob
+    exiting(here)
+}
+
 fun executeProvideOfWordList(wor_l: List<String>) {
     val (here, caller) = moduleHereAndCaller()
     entering(here, caller)
@@ -194,7 +256,7 @@ fun mainMenu (parMap: Map<String, List<String>>) {
 		println("$here: '$com' activated for '$str' functions")
 	    }
 	    "end", "exi" -> {endProgram()}
-	    "exa" -> {wrapperExecuteExampleOfWordList(wor_l)}
+	    "gen" -> {wrapperExecuteExampleOfWordList(wor_l)}
 	    "gen" -> {wrapperExecuteGenerateOfWordList(wor_l)}
 	    "has" -> {wrapperExecuteHashOfWord(com)}
 	    "hel" -> {helpOfParameterMap(parMap)}
@@ -205,6 +267,7 @@ fun mainMenu (parMap: Map<String, List<String>>) {
 	    "kwe" -> {wrapperExecuteKeywordOfWordList(wor_l)}
 	    "por" -> {wrapperExecutePortOfWordList(wor_l)}
 	    "pro" -> {wrapperExecuteProvideOfWordList(wor_l)}
+	    "ser" -> {wrapperExecuteServerOfWordList(wor_l)}
 	    else -> {
 		fatalErrorPrint ("command were one of end, exi[t], hel[p], ipf[s], run", "'"+com+"'", "re Run", here)
 	    } // else
@@ -258,6 +321,17 @@ fun wrapperExecuteGenerateOfWordList (wor_l: List<String>) {
     exiting(here)
 }
 
+fun wrapperExecuteExampleOfWordList (wor_l: List<String>) {
+    val (here, caller) = moduleHereAndCaller()
+    entering(here, caller)
+
+    if (isTrace(here)) println("$here: input wor_l '$wor_l'")
+
+    executeExampleOfWordList(wor_l)
+    
+    exiting(here)
+}
+
 fun wrapperExecuteHashOfWord(wor: String) {
     val (here, caller) = moduleHereAndCaller()
     entering(here, caller)
@@ -285,70 +359,6 @@ fun wrapperExecuteHostOfWordList (wor_l: List<String>) {
 	fatalErrorPrint ("Connection to 127.0.0.1:5001", "Connection refused", "launch Host :\n\tgo to minichain jsm; . config.sh; ipmsd.sh", here)}
     
     exiting(here)
-}
-
-fun wrapperExecuteExampleOfWordList (wor_l: List<String>) {
-    val (here, caller) = moduleHereAndCaller()
-    entering(here, caller)
-
-    if (isTrace(here)) println("$here: input wor_l '$wor_l'")
-    // https://p.codekk.com/detail/Android/http4k/http4k
-    // we can bind HttpHandlers (which are just functions from  Request -> Response) to paths/methods to create a Route,
-    // then combine many Routes together to make another HttpHandler
-    val app: HttpHandler = routes(
-        "/ping" bind GET to { _: Request -> Response(OK).body("pong!") },
-        "/greet/{name}" bind GET to { req: Request ->
-            val path: String = req.path("name")!!
-            Response(OK).body("hello $path")
-        }
-    )
-
-    // call the handler in-memory without spinning up a server
-    val inMemoryResponse: Response = app(Request(GET, "/greet/Bob"))
-    println(inMemoryResponse)
-
-// Produces:
-//    HTTP/1.1 200 OK
-//
-//
-//    hello Bob
-
-    // this is a Filter - it performs pre/post processing on a request or response
-    val timingFilter = Filter { next: HttpHandler ->
-        { request: Request ->
-            val start = System.currentTimeMillis()
-            val response = next(request)
-            val latency = System.currentTimeMillis() - start
-            println("Request to ${request.uri} took ${latency}ms")
-            response
-        }
-    }
-
-    // we can "stack" filters to create reusable units, and then apply them to an HttpHandler
-    val compositeFilter = CachingFilters.Response.NoCache().then(timingFilter)
-    val filteredApp: HttpHandler = compositeFilter.then(app)
-
-    // only 1 LOC to mount an app and start it in a container
-    filteredApp.asServer(Jetty(9000)).start()
-
-    // HTTP clients are also HttpHandlers!
-    val client: HttpHandler = OkHttp()
-
-    val networkResponse: Response = client(Request(GET, "http://localhost:9000/greet/Bob"))
-    println(networkResponse)
-
-// Produces:
-//    Request to /api/greet/Bob took 1ms
-//    HTTP/1.1 200
-//    cache-control: private, must-revalidate
-//    content-length: 9
-//    date: Thu, 08 Jun 2017 13:01:13 GMT
-//    expires: 0
-//    server: Jetty(9.3.16.v20170120)
-//
-//    hello Bob
-
-exiting(here)
 }
 
 fun wrapperExecuteHttp4kOfWordList (wor_l: List<String>) {
@@ -445,6 +455,92 @@ fun wrapperExecuteProvideOfWordList (wor_l: List<String>) {
     catch (e: java.net.ConnectException){
 	fatalErrorPrint ("Connection to 127.0.0.1:5001", "Connection refused", "launch Port :\n\tgo to minichain jsm; . config.sh; ipmsd.sh", here)}
     
+    exiting(here)
+}
+
+fun wrapperExecuteServerOfWordList (wor_l: List<String>) {
+    val (here, caller) = moduleHereAndCaller()
+    entering(here, caller)
+
+    if (isTrace(here)) println("$here: input wor_l '$wor_l'")
+    try {
+	executeServerOfWordList(wor_l)
+    }
+    catch (e: java.net.ConnectException){
+	fatalErrorPrint ("Connection to 127.0.0.1:5001", "Connection refused", "launch Port :\n\tgo to minichain jsm; . config.sh; ipmsd.sh", here)}
+    
+    exiting(here)
+}
+
+fun executeServerOfWordList(wor_l: List<String>) {
+    val (here, caller) = moduleHereAndCaller()
+    entering(here, caller)
+    
+    // Ex.: -server jetty start
+    // Ex.: -server jetty stop	
+
+    var done = false
+    if(isTrace(here)) println ("$here: input wor_l '$wor_l'")
+    var wor_s = wordStackOfWordList(wor_l)
+    
+    while (!done) {
+	try {
+	    val wor = wor_s.pop()
+	    val wor_3 = wor.substring(0,3)
+	    if(isLoop(here)) println("$here: while wor '$wor'")
+	    
+	    when (wor_3) {
+		"jet" -> {executeServerJettyOfWordStack(wor_s)}// when (wor)
+		else -> {
+		    fatalErrorPrint ("command were 'jet'ty","'$wor'", "Check input", here)
+		} // else
+	    } // when (wor_3)
+	} // try
+	catch (e: java.util.EmptyStackException) {done = true} // catch
+	
+    } // while
+    exiting(here)
+}
+
+fun executeServerJettyOfWordStack(wor_s: Stack<String>) {
+    val (here, caller) = moduleHereAndCaller()
+    entering(here, caller)
+    
+    // Ex.: -server jetty start
+    // Ex.: -server jetty stop	
+
+    var done = false
+    if(isTrace(here)) println ("$here: input wor_s '$wor_s'")
+    
+    while (!done) {
+	try {
+	    val wor = wor_s.pop()
+	    val wor_3 = wor.substring(0,3)
+	    if(isLoop(here)) println("$here: while wor '$wor'")
+	    
+	    when (wor_3) {
+		"sta" -> {
+		    jettyServer.start()
+		    println ("$here: jettyServer started on port 9000")
+		    val request = Request(Method.GET, "http://localhost:9000").query("name", "John Doe")
+		    println ("$here: request $request")
+    
+		    val client = ApacheClient()
+		    println ("$here: client $client")
+    
+		    println(client(request))
+    		}
+		"sto" -> {
+		    jettyServer.stop()
+		    println ("$here: jettyServer has been stopped")
+		}
+		else -> {
+		    fatalErrorPrint ("$here: command were 'jetty start|stop","'-server $wor'", "Check input", here)
+		}
+	    }// when (wor)
+	} // try
+	catch (e: java.util.EmptyStackException) {done = true} // catch
+    } // while
     exiting(here)
 }
 
