@@ -83,8 +83,10 @@ fun endProgram () {
 fun executeExampleOfWordList(wor_l: List<String>) {
     val (here, caller) = moduleHereAndCaller()
     entering(here, caller)
-        // we can bind HttpHandlers (which are just functions from  Request -> Response) to paths/methods to create a Route,
+
+    // we can bind HttpHandlers (which are just functions from  Request -> Response) to paths/methods to create a Route,
     // then combine many Routes together to make another HttpHandler
+    
     val app: HttpHandler = routes(
         "/ping" bind GET to { _: Request -> Response(OK).body("pong!") },
         "/greet/{name}" bind GET to { req: Request ->
@@ -95,6 +97,7 @@ fun executeExampleOfWordList(wor_l: List<String>) {
 
     // call the handler in-memory without spinning up a server
     val inMemoryResponse: Response = app(Request(GET, "/greet/Bob"))
+    println("$here: inMemoryResponse")
     println(inMemoryResponse)
 
 // Produces:
@@ -127,6 +130,7 @@ fun executeExampleOfWordList(wor_l: List<String>) {
     val client: HttpHandler = OkHttp()
 
     val networkResponse: Response = client(Request(GET, "http://localhost:9000/greet/Bob"))
+    println("$here: networkResponse")
     println(networkResponse)
 
 // Produces:
@@ -256,7 +260,7 @@ fun mainMenu (parMap: Map<String, List<String>>) {
 		println("$here: '$com' activated for '$str' functions")
 	    }
 	    "end", "exi" -> {endProgram()}
-	    "gen" -> {wrapperExecuteExampleOfWordList(wor_l)}
+	    "exa" -> {wrapperExecuteExampleOfWordList(wor_l)}
 	    "gen" -> {wrapperExecuteGenerateOfWordList(wor_l)}
 	    "has" -> {wrapperExecuteHashOfWord(com)}
 	    "hel" -> {helpOfParameterMap(parMap)}
